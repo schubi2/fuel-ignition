@@ -71,9 +71,9 @@ export default {
                   };
             let omitted = enabledVal === "omit";
             json.systemd.units.push({
-              name: formValue("name", id),
+              name: name,
               enabled: omitted ? undefined : enabledVal === "yes",
-              contents: formValue("contents", id) ? formValue("contents", id) : undefined
+              contents: contents ? contents : undefined
             });
 	  } else {
 	    // combustion
