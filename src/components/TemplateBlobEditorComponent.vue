@@ -159,12 +159,7 @@ export class BlobEditor {
   downloadImageFile(file) {
     var a = window.document.createElement("a");
     a.href = window.URL.createObjectURL(file);
-    a.download =
-      "combustion-" +
-      this.alphabet[
-        Math.floor(Math.random() * this.alphabet.length) // add random word, so there are more diverse file names for debugging
-      ].toLowerCase() +
-      ".img";
+    a.download = "fuel-ignition.img";
 
     // Append anchor to body.
     document.body.appendChild(a);

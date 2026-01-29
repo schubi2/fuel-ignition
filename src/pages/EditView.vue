@@ -187,8 +187,16 @@ const downloadConfigIgn = (formData) => {
   Utils.saveTemplateAsFile("config.ign", ignitionConfig);
 };
 
-const copyConfigIgnToClipboard = (formData) => {
-  Utils.copy(JSON.stringify(ignitionConfig, null, 2));
+const copyConfigIgnToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(ignitionConfig.value, null, 2));
+    showCopyNotification.value = true;
+    setTimeout(() => {
+      showCopyNotification.value = false;
+    }, 2000);
+  } catch (err) {
+    console.error('Failed to copy:', err);
+  }
 };
 
 const formsPanel = ref(null);

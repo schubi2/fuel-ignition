@@ -28,6 +28,15 @@
           <li class="nav-item">
             <a
               class="nav-link"
+              href="https://coreos.github.io/ignition/"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Ignition Docs</a
+            >
+         </li>
+          <li class="nav-item">
+            <a
+              class="nav-link"
               href="https://github.com/openSUSE/combustion"
               target="_blank"
               rel="noopener noreferrer"
