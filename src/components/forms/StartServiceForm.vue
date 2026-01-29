@@ -59,20 +59,37 @@ export default {
         .forEach((id) => {
           let name = formValue("name", id);
           let enabledVal = formValue("enabled", id);
-	  let contents = formValue("contents", id);
+          let contents = formValue("contents", id);
 
-	  json.combustion += "\n# start Service " + name + "\n";
-          if (contents) {
-            json.combustion +=	"echo \"" + contents +
-	      "\" > /etc/systemd/system/" + name + "\n";
-          }
-          if (enabledVal === "yes") {
-            json.combustion +=
-	      "systemctl enable " + name + "\n";
-	  }
-          if (enabledVal === "no") {
-            json.combustion +=
-	      "systemctl disable " + name + "\n";
+	  if (formData.ignition_enabled) {
+	    // ignition
+	    json.systemd =
+              "systemd" in json
+                ? json.systemd
+                : {
+                    units: [],
+                  };
+            let omitted = enabledVal === "omit";
+            json.systemd.units.push({
+              name: formValue("name", id),
+              enabled: omitted ? undefined : enabledVal === "yes",
+              contents: formValue("contents", id) ? formValue("contents", id) : undefined
+            });
+	  } else {
+	    // combustion
+	    json.combustion += "\n# start Service " + name + "\n";
+            if (contents) {
+              json.combustion +=	"echo \"" + contents +
+	        "\" > /etc/systemd/system/" + name + "\n";
+            }
+            if (enabledVal === "yes") {
+              json.combustion +=
+	        "systemctl enable " + name + "\n";
+	    }
+            if (enabledVal === "no") {
+              json.combustion +=
+	        "systemctl disable " + name + "\n";
+	    }
 	  }
         });
     },
