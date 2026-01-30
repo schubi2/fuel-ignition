@@ -64,10 +64,25 @@ export default {
 	  }
 
           let content = "LANG=" + code;
-          json.combustion +=
-	    "\n# Language\n" +
-	    "echo \"" +  content + "\"" + " > /etc/locale.conf\n" +
-            "chmod 644 /etc/locale.conf\n";
+
+          if (formData.ignition_enabled) {
+            json.storage.files.push(
+              {
+                path: "/etc/locale.conf",
+                mode: 420,
+                overwrite: true,
+                contents: {
+                  source: "data:text/plain;charset=utf-8;base64," + Utils.b64EncodeUnicode(content),
+		  human_read: content
+                }
+              }
+            );
+	  } else {
+            json.combustion +=
+	      "\n# Language\n" +
+	      "echo \"" +  content + "\"" + " > /etc/locale.conf\n" +
+              "chmod 644 /etc/locale.conf\n";
+          }
         }
       );
     },
