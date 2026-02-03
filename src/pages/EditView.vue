@@ -628,7 +628,7 @@ Using combustion file only:</div>  # mkisofs -full-iso9660-filenames -o combusti
 
 <style>
 /* navbar styling for v2 */
-@media (min-width: 1201px) {
+@media (min-width: 901px) {
   /* solid dark background */
   body:has(.edit-page) #mainNav {
     background: #1a1d21 !important;

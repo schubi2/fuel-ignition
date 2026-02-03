@@ -60,16 +60,9 @@
   margin-right: auto;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
   .nav-container {
     max-width: 100%;
-  }
-}
-
-@media (max-width: 768px) {
-  .nav-container {
-    padding-left: 24px !important;
-    padding-right: 24px !important;
   }
 }
 
