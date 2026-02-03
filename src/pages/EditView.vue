@@ -203,7 +203,7 @@ const formsPanel = ref(null);
 
 const scrollToTop = () => {
   // on mobile, window scrolls; on desktop, forms panel scrolls
-  if (window.innerWidth <= 1200) {
+  if (window.innerWidth <= 900) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } else if (formsPanel.value) {
     formsPanel.value.scrollTo({ top: 0, behavior: 'smooth' });
@@ -212,7 +212,7 @@ const scrollToTop = () => {
 
 const scrollToBottom = () => {
   // on mobile, scroll to output panel; on desktop, scroll forms panel to bottom
-  if (window.innerWidth <= 1200) {
+  if (window.innerWidth <= 900) {
     const outputPanel = document.querySelector('.output-panel');
     if (outputPanel) {
       outputPanel.scrollIntoView({ behavior: 'smooth' });
@@ -258,7 +258,12 @@ onUnmounted(() => {
       <div class="forms-panel" ref="formsPanel">
         <div class="panel-header">
           <h1>Config Generator</h1>
-          <p class="subtitle">Build your combustion configuration</p>
+          <div v-if="formData.ignition_enabled">
+            <p class="subtitle">Build your ignition/combustion configuration</p>
+          </div>
+	  <div v-else>
+            <p class="subtitle">Build your combustion configuration</p>
+	  </div>
         </div>
 
         <FormKit type="group" v-model="formData">
@@ -680,7 +685,7 @@ Using combustion file only:</div>  # mkisofs -full-iso9660-filenames -o combusti
 
 .edit-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 2fr;
   gap: 0;
   max-width: 1800px;
   margin: 0 auto;
@@ -688,7 +693,7 @@ Using combustion file only:</div>  # mkisofs -full-iso9660-filenames -o combusti
   height: 100%;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
   .edit-page {
     height: auto;
     min-height: 100vh;
@@ -731,20 +736,13 @@ Using combustion file only:</div>  # mkisofs -full-iso9660-filenames -o combusti
   background: rgba(255, 255, 255, 0.3);
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
   .forms-panel {
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     overflow-y: visible;
     height: auto;
     padding-top: 100px;
-  }
-}
-
-@media (max-width: 768px) {
-  .forms-panel {
-    padding: 100px 24px 24px;
-    width: 100%;
   }
 }
 
@@ -756,13 +754,6 @@ Using combustion file only:</div>  # mkisofs -full-iso9660-filenames -o combusti
 
 .panel-header {
   margin-bottom: 32px;
-}
-
-@media (max-width: 768px) {
-  .panel-header {
-    margin-bottom: 24px;
-    text-align: center;
-  }
 }
 
 @media (max-width: 480px) {
@@ -942,7 +933,7 @@ Using combustion file only:</div>  # mkisofs -full-iso9660-filenames -o combusti
   overflow: hidden;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
   .output-sticky {
     height: auto;
     min-height: 500px;
@@ -1285,14 +1276,14 @@ Using combustion file only:</div>  # mkisofs -full-iso9660-filenames -o combusti
 .mobile-nav {
   display: flex;
   position: fixed;
-  left: calc(50% - 44px);
+  left: calc(35% - 65px);
   bottom: 16px;
   flex-direction: column;
   gap: 4px;
   z-index: 100;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
   .mobile-nav {
     left: auto;
     right: 12px;
@@ -1329,7 +1320,7 @@ Using combustion file only:</div>  # mkisofs -full-iso9660-filenames -o combusti
   border-color: #81c13b;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
   .nav-btn {
     width: 44px;
     height: 44px;
