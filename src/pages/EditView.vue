@@ -533,7 +533,7 @@ onUnmounted(() => {
               <div class="settings-card">
                 <h2>Generated Output</h2>
 	      </div>
-	      <div class="ignition-toggle">
+	      <div class="settings-card ignition-toggle">
                 <label class="toggle-label">
                   <input
                     type="checkbox"
