@@ -1277,7 +1277,7 @@ Using combustion file only:</div>  # mkisofs -full-iso9660-filenames -o combusti
   display: flex;
   position: fixed;
   left: calc(35% - 65px);
-  bottom: 16px;
+  bottom: 30px;
   flex-direction: column;
   gap: 4px;
   z-index: 100;
