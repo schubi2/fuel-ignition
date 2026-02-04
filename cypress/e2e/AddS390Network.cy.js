@@ -3,7 +3,40 @@ describe('Creating notwork devices', () => {
     cy.visit('/edit')
   })
 
-  it('creates ignition settings', () => {
+  it('creates ignition/combustion settings', () => {
+    // load fixtures
+    cy.get('input[type=file]').selectFile('cypress/fixtures/S390.json')
+    cy.get('[data-testid=download_ignition]').click()
+    cy.get('[data-testid=download_combustion]').click()
+
+    // checking generated ignition file
+    cy.readFile('cypress/downloads/config.ign').then((content) => {
+      cy.log(content)
+      const parsed = JSON.parse(content)
+      expect(parsed.storage.files[0].path).to.equal('/etc/NetworkManager/conf.d/noauto.conf')
+      expect(parsed.storage.files[0].mode).to.equal(420)
+      expect(parsed.storage.files[0].overwrite).to.be.true
+      expect(parsed.storage.files[0].contents.source).to.be.a('string')
+      expect(parsed.storage.files[0].contents.human_read).to.equal('[main]\n# Do not do automatic (DHCP/SLAAC) configuration on ethernet devices\n# with no other matching connections.\nno-auto-default=*\n')
+    });
+
+    // checking generated combustion file
+    cy.readFile('cypress/downloads/script').then((content) => {
+      cy.log(content)
+      expect(content).to.have.string(
+        'chzdev qeth 0.0.800,0.0.801,0.0.802 -e')
+      expect(content).to.have.string(
+        'chzdev qeth 0.1.800,0.1.801,0.1.802 -e')
+      expect(content).to.have.string(
+        'if [ "${1-}" = "--prepare" ]; then')
+      expect(content).to.have.string(
+        'combustion: network prepare')
+    })
+  });
+
+  it('creates combustion settings', () => {
+    cy.get('[data-testid=toggle_ignition]').click()
+
     // load fixtures
     cy.get('input[type=file]').selectFile('cypress/fixtures/S390.json')
     cy.get('[data-testid=download_combustion]').click()
@@ -13,6 +46,8 @@ describe('Creating notwork devices', () => {
       cy.log(content)
       expect(content).to.have.string(
         'chzdev qeth 0.0.800,0.0.801,0.0.802 -e')
+      expect(content).to.have.string(
+        'chzdev qeth 0.1.800,0.1.801,0.1.802 -e')
       expect(content).to.have.string(
         'if [ "${1-}" = "--prepare" ]; then')
       expect(content).to.have.string(

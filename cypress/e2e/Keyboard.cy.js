@@ -13,6 +13,10 @@ describe('Setting keyboard', () => {
       cy.log(content)
       expect(content).to.have.string(
         'systemd-firstboot --force --keymap=arabic')
+      expect(content).to.have.string(
+        'test -f /etc/vconsole.conf && FONT=$(grep ^FONT= /etc/vconsole.conf)')
+      expect(content).to.have.string(
+        'test -n "$FONT" && echo "$FONT" >> /etc/vconsole.conf')
     });
   })
 })

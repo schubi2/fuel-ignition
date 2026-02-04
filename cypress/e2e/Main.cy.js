@@ -4,7 +4,7 @@ describe('showing fuel-ignition', () => {
   })
 
   it('goes to page -Create New Config-', () => {
-    cy.contains('Create New Config').click()
+    cy.contains('Let\'s do it').click()
     cy.contains('Config Generator')
   })
 
