@@ -46,6 +46,10 @@ export default {
         .map((key) => key.replace(keyPrefix, ""))
         .forEach((id) => {
 	  if (entries === 0) {
+            json.combustion += "\n# Update certificates if needed\n" +
+	      "if [ -x /sbin/update-ca-certificates ]; then\n" +
+	      "  test -d /var/lib/ca-certificates || /sbin/update-ca-certificates\n" +
+	      "fi\n"
             json.combustion += "\n# Add repositories\n"
 	  }
 	  entries++;
