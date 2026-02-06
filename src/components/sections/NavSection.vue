@@ -17,12 +17,6 @@
       <div class="collapse navbar-collapse" id="navbarResponsive">
         <ul class="navbar-nav ms-auto my-2 my-lg-0">
           <li class="nav-item">
-            <a class="nav-link" href="#/">Start</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#about">About</a>
-          </li>
-          <li class="nav-item">
             <a
               class="nav-link"
               href="https://microos.opensuse.org/"
@@ -31,6 +25,15 @@
               >MicroOS</a
             >
           </li>
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              href="https://coreos.github.io/ignition/"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Ignition Docs</a
+            >
+         </li>
           <li class="nav-item">
             <a
               class="nav-link"
@@ -57,16 +60,9 @@
   margin-right: auto;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
   .nav-container {
     max-width: 100%;
-  }
-}
-
-@media (max-width: 768px) {
-  .nav-container {
-    padding-left: 24px !important;
-    padding-right: 24px !important;
   }
 }
 

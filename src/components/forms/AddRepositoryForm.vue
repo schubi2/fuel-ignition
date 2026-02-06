@@ -18,6 +18,15 @@
     validation-visibility="live"
     help="This will add a 'zypper addrepo --refresh <URL> <Name>' line to the combustion script."
   />
+
+  <FormKit
+    :name="formKey('install_recommends')"
+    label="Install new recommended packages"
+    type="checkbox"
+    validation-behavior="live"
+    :value=false
+    help="calling: zypper install-new-recommends"
+  />
 </template>
 
 <script>
@@ -46,12 +55,19 @@ export default {
         .map((key) => key.replace(keyPrefix, ""))
         .forEach((id) => {
 	  if (entries === 0) {
+            json.combustion += "\n# Update certificates if needed\n" +
+	      "if [ -x /sbin/update-ca-certificates ]; then\n" +
+	      "  test -d /var/lib/ca-certificates || /sbin/update-ca-certificates\n" +
+	      "fi\n"
             json.combustion += "\n# Add repositories\n"
 	  }
 	  entries++;
 	  if (formValue("repository_url", id) && formValue("repository_name", id)) {
             json.combustion += "zypper addrepo --refresh " + formValue("repository_url", id) +
               " \"" + formValue("repository_name", id) + "\"\n"
+	  }
+	  if (formValue("install_recommends", id) === true) {
+	      json.combustion += "zypper install-new-recommends\n"
 	  }
         });
     },
@@ -75,6 +91,7 @@ export default {
  	    let repository = {}
 	    repository.name = formValue("repository_name", id)
 	    repository.url = formValue("repository_url", id)
+            repository.install_recommends = formValue("install_recommends", id)
             json.repository.repositories.push(repository)
 	  }
         }
@@ -93,6 +110,9 @@ export default {
 	    let repository = json.repository.repositories.shift();
 	    setValue("repository_name", id, repository.name);
 	    setValue("repository_url", id, repository.url);
+	    if (repository.install_recommends != undefined) {
+	      setValue("install_recommends", id, repository.install_recommends);
+	    }
           });
     },
     countImport: function (json) {

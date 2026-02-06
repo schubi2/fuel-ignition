@@ -33,10 +33,29 @@ export default {
         .forEach((id) => {
           let dataValue = formValue("hostname", id);
           let content = dataValue === undefined ? "" : dataValue;
-          json.combustion +=
-	    "\n# Hostname\n" +
-	    "echo \"" +  content + "\"" + " > /etc/hostname\n" +
-            "chmod 644 /etc/hostname\n";
+          if (formData.ignition_enabled) {
+            if (json.storage === undefined) {
+              json.storage = {};
+            }
+            if (json.storage.files === undefined) {
+              json.storage.files = [];
+            }
+            json.storage.files.push(
+              {
+                path: "/etc/hostname",
+                mode: 420,
+                overwrite: true,
+                contents: {
+                  source: "data:," + content,
+                }
+              }
+            );
+	  } else {
+            json.combustion +=
+              "\n# Hostname\n" +
+              "echo \"" +  content + "\"" + " > /etc/hostname\n" +
+              "chmod 644 /etc/hostname\n";
+	  }
         }
       );
     },

@@ -37,7 +37,9 @@ export default {
         .forEach((key) => {
           json.combustion +=
 	    "\n# Keyboard\n" +
-            "systemd-firstboot --force --keymap=" + Country.keyboardCode(formData[key]) + "\n";
+	    "test -f /etc/vconsole.conf && FONT=$(grep ^FONT= /etc/vconsole.conf)\n" +
+            "systemd-firstboot --force --keymap=" + Country.keyboardCode(formData[key]) + "\n" +
+	    "test -n \"$FONT\" && echo \"$FONT\" >> /etc/vconsole.conf\n";
         });
     },
     encodeToExport: function (json, formData) {

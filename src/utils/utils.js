@@ -1,4 +1,7 @@
 export default {
+  GlobalStorage: class {
+    static store = { addUsers: { amount: 0 } };
+  },
   PasswordHashes: class {
     static hashes = {};
   },
