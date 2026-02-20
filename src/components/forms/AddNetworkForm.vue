@@ -3,10 +3,9 @@
     :name="formKey('interface')"
     label="Interface Name"
     type="text"
-    placeholder="e.g. eth0, wlan0,... "
-    validation="required"
+    placeholder="e.g. eth0, wlan0,..."
+    help="Leave it empty if not known."
     validation-visibility="live"
-    help=" "
   />
 
   <FormKit
@@ -273,15 +272,27 @@ export default {
 	  const ipv4_dhcp_enabled = formValue("ipv4_network_type", id) === "DHCP"
 	  const ipv6_dhcp_enabled = formValue("ipv6_network_type", id) === "DHCP"
 	  const key_mgmt = formValue("key_mgmt", id)
-	  const network_id = ( wifi_enabled === true ?
-	                       formValue("wifi_ssid_content", id) :
-			       formValue("interface", id) )
+          let interface_name = formValue("interface", id)
+	  let network_id = ""
+
+          if (interface_name === undefined || interface_name.length == 0) {
+	    network_id = ( wifi_enabled === true ?
+	      formValue("wifi_ssid_content", id) :
+	      "Universal" )
+	      content = content.concat( "\n[connection]", "\n",
+                "id=", network_id, "\n",
+		"type=", ( wifi_enabled === true ? "wifi" : "ethernet" ), "\n")
+	  } else {
+	    network_id = ( wifi_enabled === true ?
+	      formValue("wifi_ssid_content", id) :
+	      interface_name )
+	      content = content.concat( "\n[connection]", "\n",
+                "id=", network_id, "\n",
+		"type=", ( wifi_enabled === true ? "wifi" : "ethernet" ), "\n",
+	        "interface-name=", interface_name, "\n" )
+	  }
 
 	  filename = filename.concat( network_id, ".nmconnection")
-          content = content.concat( "\n[connection]", "\n",
-                                    "id=", network_id, "\n",
-				    "type=", ( wifi_enabled === true ? "wifi" : "ethernet" ), "\n",
-	                            "interface-name=", formValue("interface", id), "\n" )
 
           content = content.concat( "\n[ipv4]", "\n",
                                     "dns-search=\n" )
@@ -349,25 +360,53 @@ export default {
 	      content +
               "EOF\n\n"
 	  } else {
-            json.combustion +=
-	      "# Network settings \n" +
-              "mkdir -p /etc/NetworkManager/system-connections/\n" +
-              "cat >" + filename + " <<-EOF\n" +
-	      content +
-              "EOF\n" +
-	      "chmod 600 " + filename + "\n"
+            if (formData.ignition_enabled) {
+              json.storage.files.push(
+                {
+                  path: filename,
+                  mode: 384,
+                  overwrite: true,
+                  contents: {
+                    source: "data:text/plain;charset=utf-8;base64," + Utils.b64EncodeUnicode(content),
+	            human_read: content
+                  },
+                }
+              ); 
+	    } else {
+               json.combustion +=
+                 "# Network settings \n" +
+                 "mkdir -p /etc/NetworkManager/system-connections/\n" +
+                 "cat >" + filename + " <<-EOF\n" +
+	         content +
+                 "EOF\n" +
+	         "chmod 600 " + filename + "\n"
+	    }
 	  }
 
           if (counter == 0 ) {
             content = "[main]\n# Do not do automatic (DHCP/SLAAC) configuration on ethernet devices\n" +
                       "# with no other matching connections.\nno-auto-default=*\n"
-            json.combustion +=
-	      "\n# Network settings \n" +
-              "mkdir -p /etc/NetworkManager/conf.d/\n" +
-              "cat >/etc/NetworkManager/conf.d/noauto.conf " + " <<-EOF\n" +
-	      content +
-              "EOF\n" +
-	      "chmod 644 /etc/NetworkManager/conf.d/noauto.conf\n"
+            if (formData.ignition_enabled) {
+              json.storage.files.push(
+                {
+                  path: "/etc/NetworkManager/conf.d/noauto.conf",
+                  mode: 420,
+                  overwrite: true,
+                  contents: {
+                    source: "data:text/plain;charset=utf-8;base64," + Utils.b64EncodeUnicode(content),
+                    human_read: content
+                  },
+                },
+	      )
+	    } else {
+              json.combustion +=
+	        "\n# Network settings \n" +
+                "mkdir -p /etc/NetworkManager/conf.d/\n" +
+                "cat >/etc/NetworkManager/conf.d/noauto.conf " + " <<-EOF\n" +
+	        content +
+                "EOF\n" +
+	        "chmod 644 /etc/NetworkManager/conf.d/noauto.conf\n"
+	    }
 	  }
 	  counter++
         }

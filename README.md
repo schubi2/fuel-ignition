@@ -1,6 +1,6 @@
 # Fuel Ignition
-**Combustion Config Generator.**
-Easily generate new or edit existing Combustion config.
+**Ignition & Combustion Config Generator.**
+Easily generate new or edit existing Ignition/Combustion configs.
 
 No more fiddling around with JSON or Butane.
 

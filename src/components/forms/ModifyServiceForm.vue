@@ -54,14 +54,45 @@ export default {
         .filter((x) => x.includes(keyPrefix))
         .map((key) => key.replace(keyPrefix, ""))
         .forEach((id) => {
-
           let name = formValue("name", id);
 	  let dropin_name = formValue("dropin_name", id);
           let contents = formValue("contents", id);
-	  json.combustion += "\n# modify Service " + name + "\n" +
-            "mkdir -p /etc/systemd/system/" + name + ".d/\n" +
-            "echo \"" + contents +
-            "\" > /etc/systemd/system/" + name + ".d/"+ dropin_name + "\n";
+	  if (formData.ignition_enabled) {
+	    // ignition
+	    json.systemd =
+              "systemd" in json
+                ? json.systemd
+                : {
+                    units: [],
+                  };
+
+            // see if this service unit is used already by another component
+            let unit = json.systemd.units.find(
+              (unit) => unit.name === name
+            );
+            let dropin = {
+              name: dropin_name,
+              contents: contents
+            };
+            if (unit !== undefined) {
+              if (unit.dropins !== undefined) {
+                unit.dropins.push(dropin);
+                return;
+              }
+              unit.dropins = [dropin];
+              return;
+            }
+            json.systemd.units.push({
+              name: name,
+              dropins: [dropin],
+            });
+	  } else {
+	    // combustion
+	    json.combustion += "\n# modify Service " + name + "\n" +
+              "mkdir -p /etc/systemd/system/" + name + ".d/\n" +
+              "echo \"" + contents +
+              "\" > /etc/systemd/system/" + name + ".d/"+ dropin_name + "\n";
+	  }
         });
     },
     encodeToExport: function (json, formData) {
