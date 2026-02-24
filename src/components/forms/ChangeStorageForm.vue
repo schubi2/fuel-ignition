@@ -34,6 +34,13 @@
     />
 
     <FormKit
+      :name="formKey('tpm2_pin_enroll')"
+      label="Add TPM2 with secret PIN support"
+      type="checkbox"
+      help= "Using secure chip with integrated cryptographic keys which is locked behind a PIN given by Password."
+    />
+
+    <FormKit
       :name="formKey('fido2_enroll')"
       label="Add FIDO2 (Fast Identity Online) support"
       type="checkbox"
@@ -350,6 +357,7 @@ export default {
 
             const password = formValue("password", id)
             const tpm2_enroll = formValue("tpm2_enroll", id)
+            const tpm2_pin_enroll = formValue("tpm2_pin_enroll", id)
             const fido2_enroll = formValue("fido2_enroll", id)
 
             json.combustion += "\n# Disk Encryption\n#\n" +
@@ -370,6 +378,12 @@ export default {
 	        "echo \"1\" > \"$credential\"\n" +
 		"systemd-creds encrypt --name=sdbootutil-enroll.tpm2 \"$credential\" \\\n" +
 		"             /etc/credstore.encrypted/sdbootutil-enroll.tpm2\n"
+	    }
+	    if (tpm2_pin_enroll) {
+	      json.combustion += "# Enroll TPM2 with secret PIN\n" +
+                "echo \"SECRET_PIN\" > \"$credential\"\n" +
+		"systemd-creds encrypt --name=sdbootutil-enroll.tpm2+pin \"$credential\" \\\n" +
+                "	      /etc/credstore.encrypted/sdbootutil-enroll.tpm2+pin\n"
 	    }
 	    if (fido2_enroll) {
 	      json.combustion += "# Enroll FIDO2. While firstboot the FIDO key has to be inserted/available.\n" +
@@ -444,6 +458,7 @@ export default {
 	  if (task.kind === 'Encrypt disk') {
             task.password = formValue("password", id)
 	    task.tpm2_enroll = formValue("tpm2_enroll", id)
+	    task.tpm2_pin_enroll = formValue("tpm2_pin_enroll", id)
 	    task.fido2_enroll = formValue("fido2_enroll", id)
 	  }
 
@@ -543,6 +558,9 @@ export default {
 	    }
             if (task.tpm2_enroll) {
 	      setValue("tpm2_enroll", id, true);
+	    }
+            if (task.tpm2_pin_enroll) {
+	      setValue("tpm2_pin_enroll", id, true);
 	    }
             if (task.fido2_enroll) {
 	      setValue("fido2_enroll", id, true);
