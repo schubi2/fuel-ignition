@@ -105,130 +105,65 @@ export default {
             formValue("passwd", id) === "" ||
             formValue("passwd", id) === undefined;
 
-	  if (formData.ignition_enabled) {
-	    // ignition
-
-            json.passwd = "passwd" in json ? json.passwd : { users: [] };
-            if (formValue("name", id) !== "root") {
-              Utils.GlobalStorage.store.addUsers.onlyUsernameRoot = false;
-            }
-
-            if (formValue("totp_enabled", id)) {
-              if (json.storage === undefined) {
-                json.storage = {};
-              }
-
-              if (json.storage.files === undefined) {
-                json.storage.files = [];
-              }
-
-              const totpContents = encodeURIComponent("HOTP/T30/6 " + formValue("name", id) + " - " + formValue("totp_secret", id))
-              let totpPath;
-              if (formValue("name", id) === "root") {
-                totpPath = "/root/.pam_oath_usersfile"
-              } else {
-                totpPath = "/home/" + formValue("name", id) + "/.pam_oath_usersfile"
-              }
-              json.storage.files.push({
-                overwrite: true,
-                path: totpPath,
-                contents: {
-                  "source": "data:," + totpContents
-                },
-                user: {
-                  "name": formValue("name", id)
-                },
-                group: {
-                  "name": formValue("name", id)
-                },
-                mode: 384,
-              })
-            }
-
-            if (json.passwd.users !== undefined) {
-              const publicKeys = formValue("ssh_keys", id);
-
-              const publicKeysArray =
-                publicKeys !== undefined && publicKeys.includes(",")
-                  ? publicKeys.replaceAll(" ", "").split(",") // base64 ssh keys can't contain spaces
-                  : [publicKeys];
-
-              const userPasswdIsEmpty =
-                formValue("passwd", id) === "" ||
-                formValue("passwd", id) === undefined;
-
-              json.passwd.users.push({
-                name: formValue("name", id),
-                passwordHash: userPasswdIsEmpty
-                  ? undefined
-                  : Utils.PasswordHashes.hashes[id],
-                sshAuthorizedKeys:
-                  publicKeys === undefined || publicKeys === ""
-                    ? undefined
-                    : publicKeysArray,
-              });
-            }
-	  } else {
-            // combustion
-	    if (counter == 0 ) {
-              counter++;
-	      json.combustion += "\nmount /home\n";
-	    }
-            let homePath;
-            json.combustion += "\n# Configuring user: " + name + " ...\n";
-            if (name !== "root") {
-              json.combustion += "useradd -m -s /bin/bash " + name + "\n";
-              homePath = "/home/";
-            } else {
-              homePath = "/";
-            }
-            if (!userPasswdIsEmpty) {
-              json.combustion +=
-                "echo \'" + name + ":" + Utils.PasswordHashes.hashes[id]+ "\' | chpasswd -e\n";
-            }
-
-            if (publicKeys !== undefined && publicKeys !== "") {
-              const publicKeysArray =
-                publicKeys !== undefined && publicKeys.includes(",")
-                  ? publicKeys.replaceAll(" ", "").split(",") // base64 ssh keys can't contain spaces
-                  : [publicKeys];
-
-              json.combustion +=
-                "\n# Configure SSH keys for " + name + "\n" +
-                "mkdir -m 700 -p \"" + homePath + name + "/.ssh\"\n" +
-                "{\n";
-              for (const key of publicKeysArray) {
-                json.combustion +=
-                  "  echo \"" + key + "\"\n";
-              }
-              json.combustion +=
-                "} > \"" + homePath + name + "/.ssh/authorized_keys\"\n" +
-                "# Set correct ownership and permissions\n" +
-                "chown -R " + name + ":" + name + " \"" + homePath + name + "/.ssh\"\n" +
-                "chmod 600 \"" + homePath + name + "/.ssh/authorized_keys\"\n\n";
-            }
-
-            if (formValue("totp_enabled", id)) {
-              const totpContents = "HOTP/T30/6 " + formValue("name", id) + " - " + formValue("totp_secret", id)
-	      const name = formValue("name", id);
-
-              let totpPath;
-              if (formValue("name", id) === "root") {
-                totpPath = "/root/.pam_oath_usersfile"
-              } else {
-                totpPath = "/home/" + formValue("name", id) + "/.pam_oath_usersfile"
-              }
-
-              json.combustion +=
-	        "# Set Time-based one-time password\n" +
-                "FILE_PATH=\"" + totpPath + "\"\n" +
-                "CONTENT=\"" + totpContents + "\"\n" +
-	        "mkdir -p \"$(dirname \"$FILE_PATH\")\"\n" +
-	        "echo \"$CONTENT\" > \"$FILE_PATH\"\n" +
-	        "chown " + name + ":" + name + " \"$FILE_PATH\"\n" +
-	        "chmod 600 \"$FILE_PATH\"\n";
-            }
+          // combustion
+	  if (counter == 0 ) {
+            counter++;
+	    json.combustion += "\nmount /home\n";
 	  }
+          let homePath;
+          json.combustion += "\n# Configuring user: " + name + " ...\n";
+          if (name !== "root") {
+            json.combustion += "useradd -m -s /bin/bash " + name + "\n";
+            homePath = "/home/";
+          } else {
+            homePath = "/";
+          }
+          if (!userPasswdIsEmpty) {
+            json.combustion +=
+              "echo \'" + name + ":" + Utils.PasswordHashes.hashes[id]+ "\' | chpasswd -e\n";
+          }
+
+          if (publicKeys !== undefined && publicKeys !== "") {
+            const publicKeysArray =
+              publicKeys !== undefined && publicKeys.includes(",")
+                ? publicKeys.replaceAll(" ", "").split(",") // base64 ssh keys can't contain spaces
+                : [publicKeys];
+
+            json.combustion +=
+              "\n# Configure SSH keys for " + name + "\n" +
+              "mkdir -m 700 -p \"" + homePath + name + "/.ssh\"\n" +
+              "{\n";
+            for (const key of publicKeysArray) {
+              json.combustion +=
+                "  echo \"" + key + "\"\n";
+            }
+            json.combustion +=
+              "} > \"" + homePath + name + "/.ssh/authorized_keys\"\n" +
+              "# Set correct ownership and permissions\n" +
+              "chown -R " + name + ":" + name + " \"" + homePath + name + "/.ssh\"\n" +
+              "chmod 600 \"" + homePath + name + "/.ssh/authorized_keys\"\n\n";
+          }
+
+          if (formValue("totp_enabled", id)) {
+            const totpContents = "HOTP/T30/6 " + formValue("name", id) + " - " + formValue("totp_secret", id)
+	    const name = formValue("name", id);
+
+            let totpPath;
+            if (formValue("name", id) === "root") {
+              totpPath = "/root/.pam_oath_usersfile"
+            } else {
+              totpPath = "/home/" + formValue("name", id) + "/.pam_oath_usersfile"
+            }
+
+            json.combustion +=
+	      "# Set Time-based one-time password\n" +
+              "FILE_PATH=\"" + totpPath + "\"\n" +
+              "CONTENT=\"" + totpContents + "\"\n" +
+	      "mkdir -p \"$(dirname \"$FILE_PATH\")\"\n" +
+	      "echo \"$CONTENT\" > \"$FILE_PATH\"\n" +
+	      "chown " + name + ":" + name + " \"$FILE_PATH\"\n" +
+	      "chmod 600 \"$FILE_PATH\"\n";
+          }
         });
 	if (counter > 0 ) {
           json.combustion += "\numount /home\n";
