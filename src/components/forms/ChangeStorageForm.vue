@@ -369,6 +369,10 @@ export default {
 	      "mount /var\n" +
 	      "mkdir -p /etc/credstore.encrypted\n" +
 	      "credential=\"$(mktemp disk-encryption-tool.XXXXXXXXXX)\"\n" +
+              "# Enroll recovery key\n" +
+              "echo \"1\" > \"$credential\"\n" +
+              "systemd-creds encrypt --name=sdbootutil-enroll.rk \"$credential\" \\\n" +
+	      "               /etc/credstore.encrypted/sdbootutil-enroll.rk\n" +
 	      "# Enroll extra password\n" +
 	      "echo \"" + password + "\" > \"$credential\"\n" +
 	      "systemd-creds encrypt --name=sdbootutil-enroll.pw \"$credential\" \\\n" +
@@ -381,7 +385,7 @@ export default {
 	    }
 	    if (tpm2_pin_enroll) {
 	      json.combustion += "# Enroll TPM2 with secret PIN\n" +
-                "echo \"SECRET_PIN\" > \"$credential\"\n" +
+                "echo \"" + password + "\" > \"$credential\"\n" +
 		"systemd-creds encrypt --name=sdbootutil-enroll.tpm2+pin \"$credential\" \\\n" +
                 "	      /etc/credstore.encrypted/sdbootutil-enroll.tpm2+pin\n"
 	    }
