@@ -56,16 +56,6 @@
       <p>{{ readableTOTPSecret(secret) }}</p>
     </div>
 
-    <div v-if="index === 1">
-      <FormKit
-        :name="formKey('runs_on_suse')"
-        label="Mount /home"
-        validation="required"
-        type="checkbox"
-        validation-behavior="live"
-        help="Required on SUSE related systems for creating users not named root. Otherwise, applying the Ignition/Combustion config will fail."
-      />
-    </div>
   </div>
 </template>
 
@@ -103,6 +93,7 @@ export default {
       const formValue = (key, uid) =>
         Utils.getFormValue(formPrefix, formData, key, uid);
 
+      let counter = 0;
       Object.keys(formData)
         .filter((x) => x.includes(keyPrefix))
         .map((key) => key.replace(keyPrefix, ""))
@@ -114,174 +105,69 @@ export default {
             formValue("passwd", id) === "" ||
             formValue("passwd", id) === undefined;
 
-	  if (formData.ignition_enabled) {
-	    // ignition
-
-            json.passwd = "passwd" in json ? json.passwd : { users: [] };
-            if (formValue("name", id) !== "root") {
-              Utils.GlobalStorage.store.addUsers.onlyUsernameRoot = false;
-            }
-
-            // append config for mounting /home, since otherwise users not named root will cause an ignition emergency mode
-            if (formValue("runs_on_suse", id) === true) {
-              if (json.storage === undefined) {
-                json.storage = {};
-              }
-
-              if (json.storage.filesystems === undefined) {
-                json.storage.filesystems = [];
-              }
-
-              json.storage.filesystems.push({
-                device: "/dev/disk/by-label/ROOT",
-                format: "btrfs",
-                mountOptions: ["subvol=/@/home"],
-                path: "/home",
-                wipeFilesystem: false,
-              });
-            }
-
-            if (formValue("totp_enabled", id)) {
-              if (json.storage === undefined) {
-                json.storage = {};
-              }
-
-              if (json.storage.files === undefined) {
-                json.storage.files = [];
-              }
-
-              const totpContents = encodeURIComponent("HOTP/T30/6 " + formValue("name", id) + " - " + formValue("totp_secret", id))
-              let totpPath;
-              if (formValue("name", id) === "root") {
-                totpPath = "/root/.pam_oath_usersfile"
-              } else {
-                totpPath = "/home/" + formValue("name", id) + "/.pam_oath_usersfile"
-              }
-              json.storage.files.push({
-                overwrite: true,
-                path: totpPath,
-                contents: {
-                  "source": "data:," + totpContents
-                },
-                user: {
-                  "name": formValue("name", id)
-                },
-                group: {
-                  "name": formValue("name", id)
-                },
-                mode: 384,
-              })
-            }
-
-            if (json.passwd.users !== undefined) {
-              const publicKeys = formValue("ssh_keys", id);
-
-              const publicKeysArray =
-                publicKeys !== undefined && publicKeys.includes(",")
-                  ? publicKeys.replaceAll(" ", "").split(",") // base64 ssh keys can't contain spaces
-                  : [publicKeys];
-
-              const userPasswdIsEmpty =
-                formValue("passwd", id) === "" ||
-                formValue("passwd", id) === undefined;
-
-              json.passwd.users.push({
-                name: formValue("name", id),
-                passwordHash: userPasswdIsEmpty
-                  ? undefined
-                  : Utils.PasswordHashes.hashes[id],
-                sshAuthorizedKeys:
-                  publicKeys === undefined || publicKeys === ""
-                    ? undefined
-                    : publicKeysArray,
-              });
-            }
-	  } else {
-            // combustion
-
-            // append config for mounting /home
-            if (formValue("runs_on_suse", id) === true) {
-	      json.combustion += "\n# Setup /home...\n"+
-	         "DEVICE=\"/dev/disk/by-label/ROOT\"\n" +
-	         "MOUNT_POINT=\"/home\"\n" +
-	         "SUBVOL_PATH=\"/@/home\"\n" +
-	         "# Check if the device exists\n" +
-                 "if [ ! -e \"$DEVICE\" ]; then\n" +
-                 "  echo \"Error: Device $DEVICE not found. Cannot proceed with storage setup.\"\n" +
-                 "  exit 1\n" +
-                 "fi\n" +
-                 "# Mount the subvolume to /home\n" +
-                 "mkdir -p \"$MOUNT_POINT\"\n" +
-                 "if ! mountpoint -q \"$MOUNT_POINT\"; then\n" +
-                 "  echo \"Mounting $DEVICE ($SUBVOL_PATH) to $MOUNT_POINT...\"\n" +
-                 "  mount -t btrfs -o \"subvol=$SUBVOL_PATH\" \"$DEVICE\" \"$MOUNT_POINT\"\n" +
-                 "fi\n" +
-                 "# Ensure persistence in /etc/fstab\n" +
-                 "if ! grep -q \"$MOUNT_POINT\" /etc/fstab; then\n" +
-                 "  echo \"Create $MOUNT_POINT in /etc/fstab\"\n" +
-                 "  echo \"$DEVICE $MOUNT_POINT btrfs subvol=$SUBVOL_PATH 0 0\" >> /etc/fstab\n" +
-                 "else\n" +
-                 "  echo \"/etc/fstab already contains $MOUNT_POINT.\"\n" +
-                 "fi\n"
-            }
-
-            let homePath;
-            json.combustion += "\n# Configuring user: " + name + " ...\n";
-            if (name !== "root") {
-              json.combustion += "useradd -m -s /bin/bash " + name + "\n";
-              homePath = "/home/";
-            } else {
-              homePath = "/";
-            }
-            if (!userPasswdIsEmpty) {
-              json.combustion +=
-                "echo \'" + name + ":" + Utils.PasswordHashes.hashes[id]+ "\' | chpasswd -e\n";
-            }
-
-            if (publicKeys !== undefined && publicKeys !== "") {
-              const publicKeysArray =
-                publicKeys !== undefined && publicKeys.includes(",")
-                  ? publicKeys.replaceAll(" ", "").split(",") // base64 ssh keys can't contain spaces
-                  : [publicKeys];
-
-              json.combustion +=
-                "\n# Configure SSH keys for " + name + "\n" +
-                "mkdir -p \"" + homePath + name + "/.ssh\"\n" +
-                "{\n";
-              for (const key of publicKeysArray) {
-                json.combustion +=
-                  "  echo \"" + key + "\"\n";
-              }
-              json.combustion +=
-                "} > \"" + homePath + name + "/.ssh/authorized_keys\"\n" +
-                "# Set correct ownership and permissions\n" +
-                "chown -R " + name + ":" + name + " \"" + homePath + name + "/.ssh\"\n" +
-                "chmod 700 \"" + homePath + name + "/.ssh\"\n" +
-                "chmod 600 \"" + homePath + name + "/.ssh/authorized_keys\"\n\n";
-            }
-
-            if (formValue("totp_enabled", id)) {
-              const totpContents = "HOTP/T30/6 " + formValue("name", id) + " - " + formValue("totp_secret", id)
-	      const name = formValue("name", id);
-
-              let totpPath;
-              if (formValue("name", id) === "root") {
-                totpPath = "/root/.pam_oath_usersfile"
-              } else {
-                totpPath = "/home/" + formValue("name", id) + "/.pam_oath_usersfile"
-              }
-
-              json.combustion +=
-	        "# Set Time-based one-time password\n" +
-                "FILE_PATH=\"" + totpPath + "\"\n" +
-                "CONTENT=\"" + totpContents + "\"\n" +
-	        "mkdir -p \"$(dirname \"$FILE_PATH\")\"\n" +
-	        "echo \"$CONTENT\" > \"$FILE_PATH\"\n" +
-	        "chown " + name + ":" + name + " \"$FILE_PATH\"\n" +
-	        "chmod 600 \"$FILE_PATH\"\n";
-            }
+          // combustion
+	  if (counter == 0 ) {
+            counter++;
+	    json.combustion += "\nmount /home\n";
 	  }
+          let homePath;
+          json.combustion += "\n# Configuring user: " + name + " ...\n";
+          if (name !== "root") {
+            json.combustion += "useradd -m -s /bin/bash " + name + "\n";
+            homePath = "/home/";
+          } else {
+            homePath = "/";
+          }
+          if (!userPasswdIsEmpty) {
+            json.combustion +=
+              "echo \'" + name + ":" + Utils.PasswordHashes.hashes[id]+ "\' | chpasswd -e\n";
+          }
+
+          if (publicKeys !== undefined && publicKeys !== "") {
+            const publicKeysArray =
+              publicKeys !== undefined && publicKeys.includes(",")
+                ? publicKeys.replaceAll(" ", "").split(",") // base64 ssh keys can't contain spaces
+                : [publicKeys];
+
+            json.combustion +=
+              "\n# Configure SSH keys for " + name + "\n" +
+              "mkdir -m 700 -p \"" + homePath + name + "/.ssh\"\n" +
+              "{\n";
+            for (const key of publicKeysArray) {
+              json.combustion +=
+                "  echo \"" + key + "\"\n";
+            }
+            json.combustion +=
+              "} > \"" + homePath + name + "/.ssh/authorized_keys\"\n" +
+              "# Set correct ownership and permissions\n" +
+              "chown -R " + name + ":" + name + " \"" + homePath + name + "/.ssh\"\n" +
+              "chmod 600 \"" + homePath + name + "/.ssh/authorized_keys\"\n\n";
+          }
+
+          if (formValue("totp_enabled", id)) {
+            const totpContents = "HOTP/T30/6 " + formValue("name", id) + " - " + formValue("totp_secret", id)
+	    const name = formValue("name", id);
+
+            let totpPath;
+            if (formValue("name", id) === "root") {
+              totpPath = "/root/.pam_oath_usersfile"
+            } else {
+              totpPath = "/home/" + formValue("name", id) + "/.pam_oath_usersfile"
+            }
+
+            json.combustion +=
+	      "# Set Time-based one-time password\n" +
+              "FILE_PATH=\"" + totpPath + "\"\n" +
+              "CONTENT=\"" + totpContents + "\"\n" +
+	      "mkdir -p \"$(dirname \"$FILE_PATH\")\"\n" +
+	      "echo \"$CONTENT\" > \"$FILE_PATH\"\n" +
+	      "chown " + name + ":" + name + " \"$FILE_PATH\"\n" +
+	      "chmod 600 \"$FILE_PATH\"\n";
+          }
         });
+	if (counter > 0 ) {
+          json.combustion += "\numount /home\n";
+	}
     },
 
     // asynchronously hash the passwd, since the hashMessage method is async as well,
@@ -340,7 +226,6 @@ export default {
           user.name = formValue("name", id)
           user.passwd = formValue("passwd", id)
           user.ssh_keys = formValue("ssh_keys", id)
-          user.runs_on_suse = formValue("runs_on_suse", id)
           user.totp_enabled = formValue("totp_enabled", id)
           if (formValue("totp_enabled", id)) {
             user.totp_secret = formValue("totp_secret", id)
@@ -365,7 +250,6 @@ export default {
               Utils.PasswordHashes.hashes[id] = Bcrypt.hashSync(user.passwd, 8);
             }
             setValue("ssh_keys", id, user.ssh_keys)
-            setValue("runs_on_suse", id, user.runs_on_suse)
             setValue("totp_enabled", id, user.totp_enabled)
             setValue("totp_secret", id, user.totp_secret)
           });
